@@ -26,10 +26,38 @@ static void log_uuid_(const char *kind, const esp_bt_uuid_t &uuid, uint16_t hand
   ESP_LOGI(TAG, "%s handle=0x%04X uuid_len=%d properties=0x%02X", kind, handle, uuid.len, properties);
 }
 
+void IPixelGATTProbe::setup() {
+  this->set_interval("gatt_dump", 15000, [this]() {
+    if (this->connected_) this->dump_characteristics_();
+  });
+}
+
+void IPixelGATTProbe::dump_characteristics_() {
+  uint16_t count = 0;
+  esp_gatt_status_t status = esp_ble_gattc_get_attr_count(
+      this->gattc_if_, this->conn_id_, ESP_GATT_DB_CHARACTERISTIC, 1, 0xFFFF, ESP_GATT_INVALID_HANDLE, &count);
+  ESP_LOGI(TAG, "Characteristic count: status=%d count=%d", status, count);
+  if (status != ESP_GATT_OK || count == 0) return;
+  auto *chars = static_cast<esp_gattc_char_elem_t *>(std::calloc(count, sizeof(esp_gattc_char_elem_t)));
+  if (chars == nullptr) return;
+  uint16_t found = count;
+  status = esp_ble_gattc_get_all_char(this->gattc_if_, this->conn_id_, 1, 0xFFFF, chars, &found,
+                                      ESP_GATT_INVALID_OFFSET);
+  ESP_LOGI(TAG, "Characteristic enumeration: status=%d count=%d", status, found);
+  if (status == ESP_GATT_OK) {
+    for (uint16_t i = 0; i < found; i++)
+      log_uuid_("Characteristic", chars[i].uuid, chars[i].char_handle, chars[i].properties);
+  }
+  std::free(chars);
+}
+
 void IPixelGATTProbe::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
                                           esp_ble_gattc_cb_param_t *param) {
   switch (event) {
     case ESP_GATTC_CONNECT_EVT:
+      this->gattc_if_ = gattc_if;
+      this->conn_id_ = param->connect.conn_id;
+      this->connected_ = true;
       ESP_LOGI(TAG, "Connected: conn_id=%d remote=" ESP_BD_ADDR_STR, param->connect.conn_id,
                ESP_BD_ADDR_HEX(param->connect.remote_bda));
       break;
@@ -42,6 +70,9 @@ void IPixelGATTProbe::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                param->search_res.srvc_id.uuid.uuid.uuid16, param->search_res.is_primary);
       break;
     case ESP_GATTC_SEARCH_CMPL_EVT: {
+      this->gattc_if_ = gattc_if;
+      this->conn_id_ = param->search_cmpl.conn_id;
+      this->connected_ = param->search_cmpl.status == ESP_GATT_OK;
       ESP_LOGI(TAG, "Service discovery complete: status=%d conn_id=%d", param->search_cmpl.status,
                param->search_cmpl.conn_id);
       uint16_t count = 0;
@@ -62,6 +93,7 @@ void IPixelGATTProbe::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
       break;
     }
     case ESP_GATTC_DISCONNECT_EVT:
+      this->connected_ = false;
       ESP_LOGW(TAG, "Disconnected: reason=%d", param->disconnect.reason);
       break;
     default:
