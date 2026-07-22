@@ -2,7 +2,7 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import display, light, ble_client
 from esphome.components.http_request import CONF_HTTP_REQUEST_ID, HttpRequestComponent
-from esphome.const import CONF_ID
+from esphome.const import CONF_ID, CONF_LAMBDA
 #from esphome.const import __version__ as ESPHOME_VERSION
 
 
@@ -28,6 +28,7 @@ CONFIG_SCHEMA = (
     CONFIG_ESPS3_PSRAM
     .extend(cv.COMPONENT_SCHEMA)
     .extend(ble_client.BLE_CLIENT_SCHEMA)
+    .extend(display.FULL_DISPLAY_SCHEMA)
     .extend({cv.Optional(""): cv.validate_esphome_version(ESPHOME_MIN_VERSION)})
 )
 
@@ -35,3 +36,6 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await ble_client.register_ble_node(var, config)
+    if CONF_LAMBDA in config:
+        lambda_ = await cg.process_lambda(config[CONF_LAMBDA], [(display.DisplayRef, "it")], return_type=cg.void)
+        cg.add(var.set_writer(lambda_))
