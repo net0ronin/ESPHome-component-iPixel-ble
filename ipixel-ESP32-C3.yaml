@@ -188,8 +188,8 @@ sensor:
       name: "Font Height"
       id: font_height
       icon: mdi:arrow-up-down
-    orientation:
-      name: "Orientation"
+    rotation:
+      name: "Rotation"
       id: orientation
       icon: mdi:screen-rotation
     fun_mode:
