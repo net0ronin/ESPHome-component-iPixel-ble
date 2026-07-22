@@ -7,7 +7,7 @@ from esphome.const import CONF_ID, CONF_LAMBDA
 
 
 CODEOWNERS = ["@donkracho"]
-DEPENDENCIES = ["http_request", "display", "light", "ble_client", "esp32_ble_tracker", "sensor", "number", "switch", "button", "text"]
+DEPENDENCIES = ["ble_client", "esp32_ble_tracker", "display"]
 
 ESPHOME_MIN_VERSION = "2025.11.0"
 CONF_IPIXEL_BLE = "ipixel_ble"
