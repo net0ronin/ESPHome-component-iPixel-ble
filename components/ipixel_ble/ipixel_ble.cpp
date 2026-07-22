@@ -284,6 +284,10 @@ void IPixelBLE::on_notification_received(const std::vector<uint8_t> &data) {
       // allocate framebuffer
       state_.framebuffer_.resize(new_size);
     }
+    // The current ESPHome bridge supplies a display writer directly on the
+    // core component. Render and queue its first frame as soon as the iPixel
+    // reports its geometry instead of leaving the device's clock effect active.
+    load_image_effect();
   } else {
     if (data[0] == 0x05 && data[4] == 3) {
       ESP_LOGI(TAG, "command sucess");
