@@ -45,7 +45,7 @@ void IPixelGATTProbe::dump_characteristics_() {
   if (chars == nullptr) return;
   uint16_t found = count;
   status = esp_ble_gattc_get_all_char(this->gattc_if_, this->conn_id_, 1, 0xFFFF, chars, &found,
-                                      ESP_GATT_INVALID_OFFSET);
+                                      0);
   ESP_LOGI(TAG, "Characteristic enumeration: status=%d count=%d", status, found);
   if (status == ESP_GATT_OK) {
     for (uint16_t i = 0; i < found; i++)
@@ -87,7 +87,7 @@ void IPixelGATTProbe::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
       if (chars == nullptr) break;
       uint16_t found = count;
       status = esp_ble_gattc_get_all_char(gattc_if, param->search_cmpl.conn_id, 1, 0xFFFF, chars, &found,
-                                          ESP_GATT_INVALID_OFFSET);
+                                          0);
       ESP_LOGI(TAG, "Characteristic enumeration: status=%d count=%d", status, found);
       if (status == ESP_GATT_OK) {
         for (uint16_t i = 0; i < found; i++) log_uuid_("Characteristic", chars[i].uuid, chars[i].char_handle, chars[i].properties);
