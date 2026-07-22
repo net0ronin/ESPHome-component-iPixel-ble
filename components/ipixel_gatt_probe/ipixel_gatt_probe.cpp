@@ -28,7 +28,10 @@ static void log_uuid_(const char *kind, const esp_bt_uuid_t &uuid, uint16_t hand
 
 void IPixelGATTProbe::setup() {
   this->set_interval("gatt_dump", 15000, [this]() {
-    if (this->connected_) this->dump_characteristics_();
+    if (this->parent() == nullptr || !this->parent()->connected()) return;
+    this->gattc_if_ = static_cast<esp_gatt_if_t>(this->parent()->get_gattc_if());
+    this->conn_id_ = this->parent()->get_conn_id();
+    this->dump_characteristics_();
   });
 }
 
